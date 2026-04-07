@@ -1,6 +1,8 @@
 package com.luizdev.inventory_system_remastered.exceptions.handler;
 
 import com.luizdev.inventory_system_remastered.dto.error.ErrorResponse;
+import com.luizdev.inventory_system_remastered.exceptions.productExceptions.ProductAlreadyInactiveException;
+import com.luizdev.inventory_system_remastered.exceptions.productExceptions.ProductNotFoundException;
 import com.luizdev.inventory_system_remastered.exceptions.userExceptions.EmailAlreadyExistsException;
 import com.luizdev.inventory_system_remastered.exceptions.userExceptions.UserAlreadyInactiveException;
 import com.luizdev.inventory_system_remastered.exceptions.userExceptions.UserNotFoundException;
@@ -22,11 +24,7 @@ public class GlobalExceptionHandler {
 
         log.warn("Usuário não encontrado: {}", ex.getMessage());
 
-        return ResponseEntity.
-                status(HttpStatus.NOT_FOUND).body(ErrorResponseBuilder.buildError(
-                        HttpStatus.NOT_FOUND,
-                        ex.getMessage(),
-                        request.getRequestURI()));
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(),request.getRequestURI());
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -34,23 +32,15 @@ public class GlobalExceptionHandler {
 
         log.warn("Tentativa de duplicar email já cadastrado: {}", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                ErrorResponseBuilder.buildError(
-                        HttpStatus.BAD_REQUEST,
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ));
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(UserAlreadyInactiveException.class)
-    public ResponseEntity<ErrorResponse> handleAlreadyInactive(UserAlreadyInactiveException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleUserAlreadyInactive(UserAlreadyInactiveException ex, HttpServletRequest request) {
 
         log.warn("Usuário já está inativo: {}", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponseBuilder.buildError(
-                        HttpStatus.BAD_REQUEST,
-                        ex.getMessage(),
-                        request.getRequestURI()));
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)
@@ -58,10 +48,46 @@ public class GlobalExceptionHandler {
 
         log.error("erro inesperado", ex);
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                ErrorResponseBuilder.buildError(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Erro interno de servidor",
-                        request.getRequestURI()));
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno de servidor", request.getRequestURI());
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFound(ProductNotFoundException ex,
+                                                               HttpServletRequest request) {
+
+        log.warn("Produto não encontrado: {}", ex.getMessage());
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(ProductAlreadyInactiveException.class)
+    public ResponseEntity<ErrorResponse> handleProductAlreadyInactive (ProductAlreadyInactiveException ex,
+                                                                       HttpServletRequest request) {
+        log.warn("Produto já está inativo: {}", ex.getMessage());
+
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+    }
+
+
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, String path) {
+        return ResponseEntity.status(status)
+                .body(ErrorResponseBuilder.buildError(status, message, path));
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
+            org.springframework.web.bind.MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
+
+        String errorMessage = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .findFirst()
+                .orElse("Erro de validação");
+
+        log.warn("Erro de validação: {}", errorMessage);
+
+        return buildResponse(HttpStatus.BAD_REQUEST, errorMessage, request.getRequestURI());
     }
 }
