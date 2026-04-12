@@ -14,7 +14,6 @@ public record PaymentResponse(
         PaymentStatus status,
         LocalDate dueDate,
         LocalDateTime paidAt,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime createdAt
 
 ) {}
