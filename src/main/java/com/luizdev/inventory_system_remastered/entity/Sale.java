@@ -28,6 +28,9 @@ public class Sale {
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
     private List<SaleItem> saleItems;
 
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
+    private List<Payment> payments;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id", nullable = false)
     private Warehouse warehouse;
