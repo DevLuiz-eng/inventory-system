@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -19,9 +20,12 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository repository;
+    private final PasswordEncoder passwordEncoder; // 👈 adicionado
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository,
+                       PasswordEncoder passwordEncoder) { // 👈 adicionado
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -34,6 +38,7 @@ public class UserService {
         }
 
         User user = UserMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.password())); // 👈 adicionado
         user = repository.save(user);
 
         log.info("Usuário criado com sucesso. ID: {}, Email: {}", user.getId(), user.getEmail());
@@ -93,6 +98,7 @@ public class UserService {
         user.setName(request.name());
         user.setEmail(request.email());
         user.setRole(request.role());
+        user.setPassword(passwordEncoder.encode(request.password())); // 👈 adicionado
 
         user = repository.save(user);
 
