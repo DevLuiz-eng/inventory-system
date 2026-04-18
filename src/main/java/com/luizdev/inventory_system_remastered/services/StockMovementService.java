@@ -140,6 +140,17 @@ public class StockMovementService {
                 });
     }
 
+    public Page<StockMovementResponse> getAll(Pageable pageable) {
+        log.info("Buscando todas as movimentações. Página: {}, Tamanho: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+        Page<StockMovementResponse> movements = stockMovementRepository.findAll(pageable)
+                .map(StockMovementMapper::toResponse);
+
+        log.info("Total de movimentações encontradas: {}", movements.getTotalElements());
+        return movements;
+    }
+
     public Page<StockMovementResponse> getByProductId(Long productId, Pageable pageable) {
         log.info("Buscando movimentações por produto ID: {}", productId);
 
